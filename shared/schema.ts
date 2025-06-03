@@ -100,6 +100,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export const insertAgentSchema = createInsertSchema(agents).omit({
   id: true,
+  userId: true,
   createdAt: true,
   updatedAt: true,
 });

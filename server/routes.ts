@@ -52,26 +52,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/agents", requireAuth, async (req: any, res) => {
     try {
-      const validatedData = insertAgentSchema.parse({
-        ...req.body,
+      // Validate the request body first without userId
+      const clientData = insertAgentSchema.parse(req.body);
+      
+      // Add userId from authenticated user
+      const agentData = {
+        ...clientData,
         userId: req.user.id,
-      });
+      };
 
       // Generate system prompt for the agent
-      if (!validatedData.systemPrompt) {
-        validatedData.systemPrompt = await generateSystemPrompt({
-          name: validatedData.name,
-          businessName: validatedData.businessName,
-          description: validatedData.description || "",
-          tone: validatedData.tone,
+      if (!agentData.systemPrompt) {
+        agentData.systemPrompt = await generateSystemPrompt({
+          name: agentData.name,
+          businessName: agentData.businessName,
+          description: agentData.description || "",
+          tone: agentData.tone,
         });
       }
 
-      const agent = await storage.createAgent(validatedData);
+      const agent = await storage.createAgent(agentData);
       res.status(201).json(agent);
     } catch (error) {
       console.error("Failed to create agent:", error);
-      res.status(400).json({ message: "Failed to create agent", error: error.message });
+      if (error.name === 'ZodError') {
+        res.status(400).json({ message: "Validation failed", errors: error.errors });
+      } else {
+        res.status(400).json({ message: "Failed to create agent", error: error.message });
+      }
     }
   });
 
