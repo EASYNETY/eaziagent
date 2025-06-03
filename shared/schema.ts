@@ -86,7 +86,7 @@ export const conversationsRelations = relations(conversations, ({ one }) => ({
 export const analyticsRelations = relations(analytics, ({ one }) => ({
   agent: one(agents, {
     fields: [analytics.agentId],
-    references: [analytics.id],
+    references: [agents.id],
   }),
 }));
 
