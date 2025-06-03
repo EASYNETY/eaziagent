@@ -103,10 +103,10 @@ export default function Conversations() {
                               </div>
                               <div>
                                 <h4 className="font-medium text-gray-900 dark:text-white">
-                                  Session {conversation.sessionId.slice(-8)}
+                                  Session {conversation.sessionId?.slice(-8) || 'Unknown'}
                                 </h4>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                                  Started {new Date(conversation.startedAt!).toLocaleString()}
+                                  Started {conversation.startedAt ? new Date(conversation.startedAt).toLocaleString() : 'Unknown'}
                                 </p>
                               </div>
                             </div>
