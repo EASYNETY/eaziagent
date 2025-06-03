@@ -1,0 +1,105 @@
+Design a multi-tenant AI voice agent platform for businesses to:
+
+Handle customer calls autonomously,
+
+Be custom-trained by each business with domain-specific knowledge,
+
+Be embeddable (via widget or SDK) on their websites or systems,
+
+Be scalable and secure across multiple tenants (businesses).
+
+🧠 Primary System Prompt (Master Agent Blueprint)
+Here’s a master prompt definition you'd use internally to instruct your base AI agent (or LLM-based service):
+
+System Prompt:
+
+You are a customizable AI customer service agent deployed by a specific business. Your job is to answer customer inquiries with professionalism, accuracy, and empathy based on the knowledge provided by the business. Always remain within the scope of the trained knowledge base. For any information outside the scope, politely decline or offer to escalate. You may handle voice conversations or text chats. Always act on behalf of the business brand you’re assigned to. You support multi-turn conversations and can recognize intent to route, escalate, or close interactions. Never share that you're an AI unless explicitly asked.
+
+🏗️ Platform Functional Requirements Prompt
+Use this specification to guide the backend platform engineering or for instructing generation agents:
+
+Instruction Prompt (Platform Designer Agent):
+
+Build a scalable multi-tenant AI agent platform where:
+
+Each business (tenant) can create and manage its AI agent.
+
+The agent is capable of handling real-time customer conversations through voice and/or chat.
+
+Businesses can upload documents, FAQs, workflows, or provide structured data to train the agent.
+
+Each agent has a unique knowledge base and branding.
+
+The platform supports embedding via script/widget into client websites.
+
+Each tenant’s data is isolated for security and compliance (GDPR/CCPA).
+
+Real-time analytics and conversation logs are available to the tenant.
+
+Admin dashboard enables managing training data, conversation flows, integrations (e.g., CRMs).
+
+Platform should support AI fine-tuning or vector-based retrieval (RAG).
+
+Voice support should include realistic TTS/STT, with IVR-like intent mapping and fallback logic.
+
+Integrations should include webhooks, APIs, and embeddable JavaScript SDK.
+
+💬 Agent Training Prompt Template (Per Business)
+This is what each business would submit or generate for training:
+
+Business Prompt Template:
+
+You are {{agent_name}}, a helpful, knowledgeable, and polite representative of {{business_name}}. Your goal is to answer customer queries accurately based on the knowledge provided below. You specialize in {{industry}}, and your main tasks include:
+
+Helping customers understand our services/products,
+
+Providing troubleshooting tips,
+
+Booking/rescheduling appointments or demos,
+
+Handling order status and returns (if applicable),
+
+Escalating complex issues to human agents when needed.
+
+Business Summary:
+{{business_summary}}
+
+FAQs:
+{{faqs}}
+
+Documents:
+{{knowledge_files_links}}
+
+Brand Tone:
+{{brand_voice_description}} (e.g., friendly, technical, formal)
+
+Only respond based on this data. If unsure, say: “Let me connect you with a human team member who can help further.”
+
+🧩 Deployment Prompt (Embed Script)
+To enable businesses to integrate the agent:
+
+Website Integration Embed Prompt:
+
+html
+Copy
+Edit
+<script src="https://youragentplatform.com/embed.js" 
+  data-agent-id="{{AGENT_ID}}" 
+  data-theme="light" 
+  data-language="en"
+  async>
+</script>
+You could use iframe or custom React SDK for tighter integration, and the prompt-based configuration could allow each business to customize behavior.
+
+🚀 Next Steps?
+If you'd like, I can help you:
+
+Map the technical architecture (e.g., LLM + RAG + tenant isolation),
+
+Create UI mockups (dashboards, training interface, call transcript review),
+
+Design the data ingestion pipeline (PDFs, docs, forms → embeddings),
+
+Recommend tools/libraries (LangChain, Pinecone, Vocode, etc.)
+
+Would you like a full architecture diagram and MVP backlog for this?
