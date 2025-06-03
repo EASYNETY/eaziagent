@@ -7,6 +7,7 @@ import {
   type Agent, type KnowledgeBase, type Conversation 
 } from "@shared/schema";
 import { generateAgentResponse, analyzeKnowledgeBase, generateSystemPrompt } from "./openai";
+import { initiateCall, processVoiceInput, generateVoiceResponse, generateVoiceGoodbye } from "./voice";
 import { z } from "zod";
 import multer from "multer";
 import { randomUUID } from "crypto";
@@ -156,32 +157,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Phone number is required" });
       }
 
-      // Note: This would typically integrate with a service like Twilio
-      // For now, we'll simulate the call initiation
-      const callId = `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      // Create a conversation record for the call
-      const conversation = await storage.createConversation({
-        agentId: agent.id,
-        sessionId: callId,
-        messages: [{
-          role: "system",
-          content: `Voice call initiated to ${phoneNumber}`,
-          timestamp: new Date().toISOString()
-        }],
-        isResolved: false,
-      });
+      try {
+        // Attempt Twilio integration for real voice calls
+        const callResult = await initiateCall(phoneNumber, {
+          agentId: agent.id,
+          agentName: agent.name,
+          businessName: agent.businessName,
+          tone: agent.tone,
+          systemPrompt: agent.systemPrompt || undefined,
+        });
 
-      res.json({ 
-        callId,
-        status: "initiated",
-        phoneNumber,
-        conversationId: conversation.id,
-        message: "Call initiated successfully. In a production environment, this would connect to a voice service provider."
-      });
+        // Create a conversation record for the call
+        const conversation = await storage.createConversation({
+          agentId: agent.id,
+          sessionId: callResult.callId,
+          messages: [{
+            role: "system",
+            content: `Voice call initiated to ${phoneNumber}`,
+            timestamp: new Date().toISOString()
+          }],
+          isResolved: false,
+        });
+
+        res.json({ 
+          callId: callResult.callId,
+          status: callResult.status,
+          phoneNumber,
+          conversationId: conversation.id,
+          message: "Voice call initiated successfully via Twilio"
+        });
+      } catch (twilioError) {
+        // Fallback for development/testing without Twilio
+        const callId = `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        const conversation = await storage.createConversation({
+          agentId: agent.id,
+          sessionId: callId,
+          messages: [{
+            role: "system",
+            content: `Voice call simulated to ${phoneNumber} (Twilio not configured)`,
+            timestamp: new Date().toISOString()
+          }],
+          isResolved: false,
+        });
+
+        res.json({ 
+          callId,
+          status: "simulated",
+          phoneNumber,
+          conversationId: conversation.id,
+          message: "Call simulated successfully. To enable real voice calls, configure Twilio credentials."
+        });
+      }
     } catch (error) {
       console.error("Call initiation error:", error);
       res.status(500).json({ message: "Failed to initiate call", error: (error as any).message });
+    }
+  });
+
+  // Voice webhook endpoints for Twilio
+  app.post("/api/voice/webhook/:agentId", async (req: any, res) => {
+    try {
+      const { agentId } = req.params;
+      const agent = await storage.getAgentById(agentId);
+      
+      if (!agent) {
+        return res.type('text/xml').send(generateVoiceResponse("I'm sorry, the agent is not available."));
+      }
+
+      const welcomeMessage = `Hello! You've reached ${agent.businessName}. I'm ${agent.name}, your AI assistant. How can I help you today?`;
+      res.type('text/xml').send(generateVoiceResponse(welcomeMessage));
+    } catch (error) {
+      console.error("Voice webhook error:", error);
+      res.type('text/xml').send(generateVoiceResponse("I'm sorry, there was an error. Please try again."));
+    }
+  });
+
+  app.post("/api/voice/process", async (req: any, res) => {
+    try {
+      const { SpeechResult, CallSid } = req.body;
+      const agentId = req.query.agentId;
+
+      if (!SpeechResult || !agentId) {
+        return res.type('text/xml').send(generateVoiceResponse("I didn't catch that. Could you please repeat?"));
+      }
+
+      const voiceResponse = await processVoiceInput(SpeechResult, agentId, CallSid);
+      res.type('text/xml').send(voiceResponse);
+    } catch (error) {
+      console.error("Voice processing error:", error);
+      res.type('text/xml').send(generateVoiceResponse("I'm experiencing technical difficulties. Please try again."));
+    }
+  });
+
+  app.post("/api/voice/status/:agentId", async (req: any, res) => {
+    try {
+      const { CallStatus, CallSid, From, To } = req.body;
+      const { agentId } = req.params;
+
+      // Update conversation status based on call status
+      if (CallStatus === 'completed') {
+        // Mark conversation as resolved when call ends
+        const conversations = await storage.getConversationsByAgentId(agentId);
+        const conversation = conversations.find(c => c.sessionId === CallSid);
+        
+        if (conversation) {
+          await storage.updateConversation(conversation.id, {
+            isResolved: true,
+            endedAt: new Date(),
+          });
+        }
+      }
+
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Voice status update error:", error);
+      res.sendStatus(500);
     }
   });
 
