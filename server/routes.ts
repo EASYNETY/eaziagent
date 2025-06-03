@@ -63,12 +63,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate system prompt for the agent
       if (!agentData.systemPrompt) {
-        agentData.systemPrompt = await generateSystemPrompt({
-          name: agentData.name,
-          businessName: agentData.businessName,
-          description: agentData.description || "",
-          tone: agentData.tone,
-        });
+        try {
+          agentData.systemPrompt = await generateSystemPrompt({
+            name: agentData.name,
+            businessName: agentData.businessName,
+            description: agentData.description || "",
+            tone: agentData.tone,
+          });
+        } catch (error) {
+          console.warn("System prompt generation failed, using fallback:", (error as any).message);
+          agentData.systemPrompt = `You are ${agentData.name}, an AI assistant for ${agentData.businessName}. Your tone is ${agentData.tone}. ${agentData.description ? `Your role: ${agentData.description}` : ''}`;
+        }
       }
 
       const agent = await storage.createAgent(agentData);
@@ -107,6 +112,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete agent" });
+    }
+  });
+
+  // Agent testing route
+  app.post("/api/agents/:id/test", requireAuth, async (req: any, res) => {
+    try {
+      const agent = await storage.getAgentByIdAndUserId(req.params.id, req.user.id);
+      if (!agent) {
+        return res.status(404).json({ message: "Agent not found" });
+      }
+
+      const { message } = req.body;
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      // Generate AI response using the agent's configuration
+      const response = await generateAgentResponse(message, {
+        name: agent.name,
+        businessName: agent.businessName,
+        tone: agent.tone,
+        systemPrompt: agent.systemPrompt || "",
+      });
+
+      res.json({ response: response.response, confidence: response.confidence });
+    } catch (error) {
+      console.error("Agent test error:", error);
+      res.status(500).json({ message: "Failed to test agent", error: (error as any).message });
+    }
+  });
+
+  // Voice calling route
+  app.post("/api/agents/:id/call", requireAuth, async (req: any, res) => {
+    try {
+      const agent = await storage.getAgentByIdAndUserId(req.params.id, req.user.id);
+      if (!agent) {
+        return res.status(404).json({ message: "Agent not found" });
+      }
+
+      const { phoneNumber } = req.body;
+      if (!phoneNumber || typeof phoneNumber !== 'string') {
+        return res.status(400).json({ message: "Phone number is required" });
+      }
+
+      // Note: This would typically integrate with a service like Twilio
+      // For now, we'll simulate the call initiation
+      const callId = `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Create a conversation record for the call
+      const conversation = await storage.createConversation({
+        agentId: agent.id,
+        sessionId: callId,
+        messages: [{
+          role: "system",
+          content: `Voice call initiated to ${phoneNumber}`,
+          timestamp: new Date().toISOString()
+        }],
+        isResolved: false,
+      });
+
+      res.json({ 
+        callId,
+        status: "initiated",
+        phoneNumber,
+        conversationId: conversation.id,
+        message: "Call initiated successfully. In a production environment, this would connect to a voice service provider."
+      });
+    } catch (error) {
+      console.error("Call initiation error:", error);
+      res.status(500).json({ message: "Failed to initiate call", error: (error as any).message });
     }
   });
 
