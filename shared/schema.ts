@@ -9,18 +9,55 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   businessName: text("business_name").notNull(),
   email: text("email").notNull().unique(),
+  role: text("role").notNull().default("user"), // user, admin, super_admin
+  isActive: boolean("is_active").default(true),
+  lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const systemSettings = pgTable("system_settings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  key: text("key").notNull().unique(),
+  value: text("value"),
+  description: text("description"),
+  category: text("category").notNull(), // api_keys, integrations, general
+  isEncrypted: boolean("is_encrypted").default(false),
+  updatedBy: integer("updated_by").references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const organizations = pgTable("organizations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  domain: text("domain"),
+  plan: text("plan").notNull().default("free"), // free, pro, enterprise
+  maxAgents: integer("max_agents").default(3),
+  maxCallsPerMonth: integer("max_calls_per_month").default(100),
+  isActive: boolean("is_active").default(true),
+  ownerId: integer("owner_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const organizationMembers = pgTable("organization_members", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  role: text("role").notNull().default("member"), // member, admin
+  joinedAt: timestamp("joined_at").defaultNow(),
 });
 
 export const agents = pgTable("agents", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: integer("user_id").notNull().references(() => users.id),
+  organizationId: uuid("organization_id").references(() => organizations.id),
   name: text("name").notNull(),
   description: text("description"),
   businessName: text("business_name").notNull(),
   tone: text("tone").notNull().default("professional"),
   isActive: boolean("is_active").default(true),
   systemPrompt: text("system_prompt"),
+  callsThisMonth: integer("calls_this_month").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -55,14 +92,49 @@ export const analytics = pgTable("analytics", {
 });
 
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
   agents: many(agents),
+  ownedOrganizations: many(organizations, { relationName: "organizationOwner" }),
+  organizationMemberships: many(organizationMembers),
+  systemSettingsUpdates: many(systemSettings),
+}));
+
+export const organizationsRelations = relations(organizations, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [organizations.ownerId],
+    references: [users.id],
+    relationName: "organizationOwner",
+  }),
+  members: many(organizationMembers),
+  agents: many(agents),
+}));
+
+export const organizationMembersRelations = relations(organizationMembers, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [organizationMembers.organizationId],
+    references: [organizations.id],
+  }),
+  user: one(users, {
+    fields: [organizationMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const systemSettingsRelations = relations(systemSettings, ({ one }) => ({
+  updatedByUser: one(users, {
+    fields: [systemSettings.updatedBy],
+    references: [users.id],
+  }),
 }));
 
 export const agentsRelations = relations(agents, ({ one, many }) => ({
   user: one(users, {
     fields: [agents.userId],
     references: [users.id],
+  }),
+  organization: one(organizations, {
+    fields: [agents.organizationId],
+    references: [organizations.id],
   }),
   knowledgeBase: many(knowledgeBase),
   conversations: many(conversations),
@@ -121,6 +193,22 @@ export const insertAnalyticsSchema = createInsertSchema(analytics).omit({
   date: true,
 });
 
+export const insertOrganizationSchema = createInsertSchema(organizations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export const insertOrganizationMemberSchema = createInsertSchema(organizationMembers).omit({
+  id: true,
+  joinedAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -132,3 +220,9 @@ export type InsertConversation = z.infer<typeof insertConversationSchema>;
 export type Conversation = typeof conversations.$inferSelect;
 export type InsertAnalytics = z.infer<typeof insertAnalyticsSchema>;
 export type Analytics = typeof analytics.$inferSelect;
+export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
+export type Organization = typeof organizations.$inferSelect;
+export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
+export type SystemSetting = typeof systemSettings.$inferSelect;
+export type InsertOrganizationMember = z.infer<typeof insertOrganizationMemberSchema>;
+export type OrganizationMember = typeof organizationMembers.$inferSelect;

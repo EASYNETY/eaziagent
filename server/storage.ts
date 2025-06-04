@@ -1,9 +1,11 @@
 import { 
-  users, agents, knowledgeBase, conversations, analytics,
+  users, agents, knowledgeBase, conversations, analytics, organizations, systemSettings,
   type User, type InsertUser, type Agent, type InsertAgent,
   type KnowledgeBase, type InsertKnowledgeBase,
   type Conversation, type InsertConversation,
-  type Analytics, type InsertAnalytics
+  type Analytics, type InsertAnalytics,
+  type Organization, type InsertOrganization,
+  type SystemSetting, type InsertSystemSetting
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -19,14 +21,30 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, updates: Partial<InsertUser>): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
+
+  // Organization methods
+  getAllOrganizations(): Promise<Organization[]>;
+  getOrganizationById(id: string): Promise<Organization | undefined>;
+  createOrganization(org: InsertOrganization): Promise<Organization>;
+  updateOrganization(id: string, updates: Partial<InsertOrganization>): Promise<Organization | undefined>;
+  deleteOrganization(id: string): Promise<boolean>;
 
   // Agent methods
   getAgentsByUserId(userId: number): Promise<Agent[]>;
   getAgentById(id: string): Promise<Agent | undefined>;
   getAgentByIdAndUserId(id: string, userId: number): Promise<Agent | undefined>;
+  getAllAgents(): Promise<Agent[]>;
   createAgent(agent: InsertAgent): Promise<Agent>;
   updateAgent(id: string, updates: Partial<InsertAgent>): Promise<Agent | undefined>;
   deleteAgent(id: string, userId: number): Promise<boolean>;
+
+  // System Settings methods
+  getAllSystemSettings(): Promise<SystemSetting[]>;
+  getSystemSettingByKey(key: string): Promise<SystemSetting | undefined>;
+  upsertSystemSetting(setting: InsertSystemSetting): Promise<SystemSetting>;
+  deleteSystemSetting(key: string): Promise<boolean>;
 
   // Knowledge base methods
   getKnowledgeBaseByAgentId(agentId: string): Promise<KnowledgeBase[]>;
@@ -36,11 +54,13 @@ export interface IStorage {
   // Conversation methods
   getConversationsByAgentId(agentId: string): Promise<Conversation[]>;
   getConversationById(id: string): Promise<Conversation | undefined>;
+  getAllConversations(): Promise<Conversation[]>;
   createConversation(conversation: InsertConversation): Promise<Conversation>;
   updateConversation(id: string, updates: Partial<InsertConversation>): Promise<Conversation | undefined>;
 
   // Analytics methods
   getAnalyticsByAgentId(agentId: string): Promise<Analytics[]>;
+  getAllAnalytics(): Promise<Analytics[]>;
   createAnalytics(analytics: InsertAnalytics): Promise<Analytics>;
   updateAnalytics(id: string, updates: Partial<InsertAnalytics>): Promise<Analytics | undefined>;
 
