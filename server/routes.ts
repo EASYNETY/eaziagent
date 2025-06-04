@@ -355,9 +355,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { key } = req.params;
       const { value } = req.body;
 
+      // Get existing setting to preserve category
+      const existingSetting = await storage.getSystemSettingByKey(key);
+      
       const setting = await storage.upsertSystemSetting({
         key,
         value,
+        category: existingSetting?.category || 'general',
+        description: existingSetting?.description,
         updatedBy: req.user.id,
       });
 
