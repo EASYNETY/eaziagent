@@ -14,6 +14,7 @@ import Conversations from "@/pages/conversations";
 import Analytics from "@/pages/analytics";
 import Integration from "@/pages/integration";
 import Settings from "@/pages/settings";
+import SuperAdminDashboard from "@/pages/super-admin";
 
 function Router() {
   return (
@@ -25,6 +26,7 @@ function Router() {
       <ProtectedRoute path="/analytics" component={Analytics} />
       <ProtectedRoute path="/integration" component={Integration} />
       <ProtectedRoute path="/settings" component={Settings} />
+      <ProtectedRoute path="/super-admin" component={SuperAdminDashboard} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>

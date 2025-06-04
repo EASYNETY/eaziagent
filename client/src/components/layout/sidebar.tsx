@@ -8,7 +8,8 @@ import {
   BarChart3, 
   Code, 
   Settings,
-  User
+  User,
+  Shield
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -33,6 +34,11 @@ export default function Sidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
 
+  // Add super admin navigation for super admin users
+  const adminNavItems: NavItem[] = user?.role === 'super_admin' ? [
+    { label: "Super Admin", href: "/super-admin", icon: Shield }
+  ] : [];
+
   return (
     <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
       {/* Logo and Brand */}
@@ -51,7 +57,7 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
-          {navItems.map((item) => {
+          {[...navItems, ...adminNavItems].map((item) => {
             const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
             const Icon = item.icon;
             
