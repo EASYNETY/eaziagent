@@ -140,7 +140,7 @@ export const callLogs = pgTable("call_logs", {
   status: text("status"),
   recordingUrl: text("recording_url"),
   transcript: text("transcript"),
-  aiConfidence: decimal("ai_confidence", { precision: 3, scale: 2 }),
+  aiConfidence: text("ai_confidence"),
   escalated: boolean("escalated").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -150,7 +150,7 @@ export const integrations = pgTable("integrations", {
   organizationId: uuid("organization_id").references(() => organizations.id),
   type: text("type").notNull(),
   name: text("name").notNull(),
-  config: json("config"),
+  config: jsonb("config"),
   apiKeyEncrypted: text("api_key_encrypted"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
