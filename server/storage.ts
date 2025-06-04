@@ -101,6 +101,94 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async updateUser(id: number, updates: Partial<InsertUser>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  // Organization methods
+  async getAllOrganizations(): Promise<Organization[]> {
+    return await db.select().from(organizations).orderBy(desc(organizations.createdAt));
+  }
+
+  async getOrganizationById(id: string): Promise<Organization | undefined> {
+    const [org] = await db.select().from(organizations).where(eq(organizations.id, id));
+    return org;
+  }
+
+  async createOrganization(org: InsertOrganization): Promise<Organization> {
+    const [organization] = await db
+      .insert(organizations)
+      .values(org)
+      .returning();
+    return organization;
+  }
+
+  async updateOrganization(id: string, updates: Partial<InsertOrganization>): Promise<Organization | undefined> {
+    const [org] = await db
+      .update(organizations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(organizations.id, id))
+      .returning();
+    return org;
+  }
+
+  async deleteOrganization(id: string): Promise<boolean> {
+    const result = await db.delete(organizations).where(eq(organizations.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // System Settings methods
+  async getAllSystemSettings(): Promise<SystemSetting[]> {
+    return await db.select().from(systemSettings).orderBy(systemSettings.category, systemSettings.key);
+  }
+
+  async getSystemSettingByKey(key: string): Promise<SystemSetting | undefined> {
+    const [setting] = await db.select().from(systemSettings).where(eq(systemSettings.key, key));
+    return setting;
+  }
+
+  async upsertSystemSetting(setting: InsertSystemSetting): Promise<SystemSetting> {
+    const [result] = await db
+      .insert(systemSettings)
+      .values({ ...setting, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: systemSettings.key,
+        set: { 
+          value: setting.value,
+          updatedBy: setting.updatedBy,
+          updatedAt: new Date()
+        }
+      })
+      .returning();
+    return result;
+  }
+
+  async deleteSystemSetting(key: string): Promise<boolean> {
+    const result = await db.delete(systemSettings).where(eq(systemSettings.key, key));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getAllAgents(): Promise<Agent[]> {
+    return await db.select().from(agents).orderBy(desc(agents.createdAt));
+  }
+
+  async getAllConversations(): Promise<Conversation[]> {
+    return await db.select().from(conversations).orderBy(desc(conversations.startedAt));
+  }
+
+  async getAllAnalytics(): Promise<Analytics[]> {
+    return await db.select().from(analytics).orderBy(desc(analytics.date));
+  }
+
   // Agent methods
   async getAgentsByUserId(userId: number): Promise<Agent[]> {
     return await db.select().from(agents).where(eq(agents.userId, userId)).orderBy(desc(agents.createdAt));

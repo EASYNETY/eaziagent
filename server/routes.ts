@@ -276,6 +276,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Super Admin Routes
+  const requireSuperAdmin = (req: any, res: any, next: any) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    if (req.user.role !== 'super_admin') {
+      return res.status(403).json({ message: "Super admin access required" });
+    }
+    next();
+  };
+
+  // Admin dashboard stats
+  app.get("/api/admin/stats", requireSuperAdmin, async (req: any, res) => {
+    try {
+      const totalUsers = await storage.getAllUsers();
+      const totalOrganizations = await storage.getAllOrganizations();
+      const totalAgents = await storage.getAllAgents();
+      const totalConversations = await storage.getAllConversations();
+
+      const stats = {
+        totalOrganizations: totalOrganizations.length,
+        totalUsers: totalUsers.length,
+        totalAgents: totalAgents.length,
+        totalCallsThisMonth: totalAgents.reduce((sum, agent) => sum + (agent.callsThisMonth || 0), 0),
+        activeOrganizations: totalOrganizations.filter(org => org.isActive).length,
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error("Admin stats error:", error);
+      res.status(500).json({ message: "Failed to fetch admin stats" });
+    }
+  });
+
+  // Get all organizations with details
+  app.get("/api/admin/organizations", requireSuperAdmin, async (req: any, res) => {
+    try {
+      const organizations = await storage.getAllOrganizations();
+      const users = await storage.getAllUsers();
+      const agents = await storage.getAllAgents();
+      
+      const organizationsWithDetails = organizations.map(org => {
+        const owner = users.find(u => u.id === org.ownerId);
+        const orgAgents = agents.filter(a => a.organizationId === org.id);
+        const orgUsers = users.filter(u => u.id === org.ownerId); // For now, just owner
+        
+        return {
+          ...org,
+          owner: owner || { businessName: 'Unknown' },
+          agentCount: orgAgents.length,
+          userCount: orgUsers.length,
+          callsThisMonth: orgAgents.reduce((sum, agent) => sum + (agent.callsThisMonth || 0), 0),
+        };
+      });
+
+      res.json(organizationsWithDetails);
+    } catch (error) {
+      console.error("Admin organizations error:", error);
+      res.status(500).json({ message: "Failed to fetch organizations" });
+    }
+  });
+
+  // Get system settings
+  app.get("/api/admin/settings", requireSuperAdmin, async (req: any, res) => {
+    try {
+      const settings = await storage.getAllSystemSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Admin settings error:", error);
+      res.status(500).json({ message: "Failed to fetch system settings" });
+    }
+  });
+
+  // Update system setting
+  app.put("/api/admin/settings/:key", requireSuperAdmin, async (req: any, res) => {
+    try {
+      const { key } = req.params;
+      const { value } = req.body;
+
+      const setting = await storage.upsertSystemSetting({
+        key,
+        value,
+        updatedBy: req.user.id,
+      });
+
+      res.json(setting);
+    } catch (error) {
+      console.error("Admin setting update error:", error);
+      res.status(500).json({ message: "Failed to update system setting" });
+    }
+  });
+
+  // Get recent activity
+  app.get("/api/admin/activity", requireSuperAdmin, async (req: any, res) => {
+    try {
+      const conversations = await storage.getAllConversations();
+      const agents = await storage.getAllAgents();
+      const users = await storage.getAllUsers();
+
+      const recentActivity = [
+        ...conversations.slice(0, 10).map(conv => ({
+          message: `New conversation started with agent`,
+          timestamp: conv.startedAt,
+          type: 'conversation'
+        })),
+        ...agents.slice(0, 5).map(agent => ({
+          message: `New agent "${agent.name}" created`,
+          timestamp: agent.createdAt,
+          type: 'agent'
+        })),
+        ...users.slice(0, 5).map(user => ({
+          message: `New user "${user.businessName}" registered`,
+          timestamp: user.createdAt,
+          type: 'user'
+        }))
+      ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 20);
+
+      res.json(recentActivity);
+    } catch (error) {
+      console.error("Admin activity error:", error);
+      res.status(500).json({ message: "Failed to fetch recent activity" });
+    }
+  });
+
   // Knowledge base routes
   app.get("/api/agents/:agentId/knowledge", requireAuth, async (req: any, res) => {
     try {
