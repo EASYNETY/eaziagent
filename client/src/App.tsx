@@ -14,11 +14,13 @@ import Conversations from "@/pages/conversations";
 import Analytics from "@/pages/analytics";
 import Integration from "@/pages/integration";
 import Settings from "@/pages/settings";
-import SuperAdminDashboard from "@/pages/super-admin";
+import SuperAdminDashboard from "@/pages/super-admin-new";
+import LandingPage from "@/pages/landing";
 
 function Router() {
   return (
     <Switch>
+      <Route path="/landing" component={LandingPage} />
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/agents" component={Agents} />
       <ProtectedRoute path="/knowledge" component={KnowledgeBase} />

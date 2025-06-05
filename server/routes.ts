@@ -405,6 +405,156 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Tenant management routes
+  app.get("/api/admin/tenants", requireSuperAdmin, async (req: any, res) => {
+    try {
+      const organizations = await storage.getAllOrganizations();
+      const users = await storage.getAllUsers();
+      const agents = await storage.getAllAgents();
+
+      const tenantsWithDetails = organizations.map(org => {
+        const owner = users.find(u => u.id === org.ownerId);
+        const orgAgents = agents.filter(a => a.organizationId === org.id);
+        
+        return {
+          id: org.id,
+          name: org.name,
+          domain: org.domain,
+          plan: org.plan,
+          maxAgents: org.maxAgents,
+          maxCallsPerMonth: org.maxCallsPerMonth,
+          isActive: org.isActive,
+          ownerId: org.ownerId,
+          userCount: 1, // Just owner for now
+          agentCount: orgAgents.length,
+          monthlyUsage: orgAgents.reduce((sum, agent) => sum + (agent.callsThisMonth || 0), 0),
+          createdAt: org.createdAt
+        };
+      });
+
+      res.json(tenantsWithDetails);
+    } catch (error) {
+      console.error("Admin tenants error:", error);
+      res.status(500).json({ message: "Failed to fetch tenants" });
+    }
+  });
+
+  // Agent management routes for super admin
+  app.get("/api/admin/agents", requireSuperAdmin, async (req: any, res) => {
+    try {
+      const agents = await storage.getAllAgents();
+      const users = await storage.getAllUsers();
+      const conversations = await storage.getAllConversations();
+
+      const agentsWithDetails = agents.map(agent => {
+        const owner = users.find(u => u.id === agent.userId);
+        const agentConversations = conversations.filter(c => c.agentId === agent.id);
+        
+        return {
+          ...agent,
+          businessName: owner?.businessName || 'Unknown',
+          conversationCount: agentConversations.length,
+          lastUsed: agentConversations.length > 0 ? 
+            Math.max(...agentConversations.map(c => new Date(c.startedAt).getTime())) : 
+            new Date(agent.createdAt).toISOString()
+        };
+      });
+
+      res.json(agentsWithDetails);
+    } catch (error) {
+      console.error("Admin agents error:", error);
+      res.status(500).json({ message: "Failed to fetch agents" });
+    }
+  });
+
+  // User management routes for super admin
+  app.get("/api/admin/users", requireSuperAdmin, async (req: any, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      
+      const usersWithDetails = users.map(user => ({
+        ...user,
+        tenantId: 'default' // For now, all users are in default tenant
+      }));
+
+      res.json(usersWithDetails);
+    } catch (error) {
+      console.error("Admin users error:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  // Voice infrastructure mock routes
+  app.get("/api/admin/voice/trunks", requireSuperAdmin, async (req: any, res) => {
+    try {
+      // Mock SIP trunk data
+      const mockTrunks = [
+        {
+          id: "trunk-1",
+          name: "Primary Twilio Trunk",
+          provider: "twilio",
+          endpoint: "sip.twilio.com",
+          isActive: true,
+          callVolume: 1250,
+          quality: 4.8
+        },
+        {
+          id: "trunk-2", 
+          name: "Backup Telnyx Trunk",
+          provider: "telnyx",
+          endpoint: "sip.telnyx.com",
+          isActive: true,
+          callVolume: 450,
+          quality: 4.6
+        }
+      ];
+      res.json(mockTrunks);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch voice trunks" });
+    }
+  });
+
+  app.get("/api/admin/voice/configs", requireSuperAdmin, async (req: any, res) => {
+    try {
+      // Mock voice configuration data
+      const mockConfigs = [
+        {
+          id: "config-1",
+          provider: "OpenAI Whisper",
+          region: "us-east-1",
+          isDefault: true,
+          features: ["STT", "Real-time"]
+        },
+        {
+          id: "config-2",
+          provider: "Azure Speech",
+          region: "us-west-2", 
+          isDefault: false,
+          features: ["TTS", "STT", "Voice Cloning"]
+        }
+      ];
+      res.json(mockConfigs);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch voice configs" });
+    }
+  });
+
+  app.get("/api/admin/voice/stats", requireSuperAdmin, async (req: any, res) => {
+    try {
+      const mockStats = {
+        activeCalls: 12,
+        averageQuality: 4.8,
+        averageLatency: 45,
+        successRate: 99.7,
+        queuedCalls: 3,
+        failedCalls: 2
+      };
+      res.json(mockStats);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch voice stats" });
+    }
+  });
+
   // Knowledge base routes
   app.get("/api/agents/:agentId/knowledge", requireAuth, async (req: any, res) => {
     try {

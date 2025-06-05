@@ -1,0 +1,58 @@
+Design a clean, modern, and enterprise-grade UI/UX interface for a multi-tenant SaaS product called 'CustomerCare Pro' — an AI-powered voice agent platform used by businesses to manage their customer care via intelligent virtual agents. There are two required screens:
+
+1. Landing Page:
+
+Bold headline: 'Revolutionize Customer Support with AI Voice Agents'
+
+Subheadline: 'Let AI answer, route, and resolve customer calls 24/7.'
+
+CTA: 'Start Free Trial' and 'Book a Demo'
+
+Showcase features in sections:
+
+Smart AI Agent
+
+Natural Voice Recognition
+
+Easy CRM Integration
+
+Call Recording & Analytics
+
+Multi-Tenant Architecture
+
+Full White Label Support
+
+Include customer logos, testimonial carousel, pricing tiers, and FAQ section.
+
+Use modern SaaS style: soft gradients, rounded corners, animated icons, high contrast for CTA buttons.
+
+2. Super Admin Dashboard (Multi-Tenant System):
+
+Sidebar Navigation: Dashboard, Tenants, Voice Infrastructure, Agents, Usage, Billing, Settings
+
+Main Widgets:
+
+Overview: Active Tenants, Total Calls Today, LLM Usage (API cost), Issues Detected
+
+Tenant Table: Name, Status, Plan, Minutes Used, Last Activity
+
+Real-time Call Monitor with status (Live, Failed, Transcribing, Escalated)
+
+Graphs: Voice Usage Over Time, Top Agents, LLM Cost Breakdown
+
+Top Bar: Search, Notifications, Profile, Dark Mode toggle
+
+Use responsive layout (mobile & desktop), card-based UI, subtle animations for interactions
+
+Theme: Clean minimal layout, dark/light toggle, enterprise feel, similar to Vercel, Stripe, or Linear.app"
+
+Ensure accessibility (WCAG), intuitive navigation, and developer hand-off readiness (assets, colors, component styles). Present designs in both light and dark modes."
+
+🎁 Optional Add-Ons:
+You can also append any of the following to the prompt:
+
+“Include onboarding flow for new tenants with wizard UI (choose plan, setup domain, connect SIP, upload KB).”
+
+“Add AI-powered assistant inside dashboard UI for support.”
+
+“Add ability for tenants to customize branding (logo, voice name, tone).

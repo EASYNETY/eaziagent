@@ -67,14 +67,17 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
         <Header 
           title="Dashboard"
           description="Manage your AI agents and monitor performance"
           action={
-            <Button onClick={() => setShowCreateModal(true)} className="flex items-center space-x-2">
+            <Button 
+              onClick={() => setShowCreateModal(true)} 
+              className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
+            >
               <Plus className="h-4 w-4" />
               <span>Create Agent</span>
             </Button>
@@ -82,14 +85,14 @@ export default function Dashboard() {
         />
 
         <div className="p-6 space-y-6">
-          {/* Stats Cards */}
+          {/* Enhanced Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
+            <Card className="border-0 shadow-lg bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Total Agents</p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Total Agents</p>
+                    <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mt-2">
                       {stats.totalAgents}
                     </p>
                     <p className="text-sm text-green-600 mt-1 flex items-center">
@@ -97,8 +100,8 @@ export default function Dashboard() {
                       +2 this month
                     </p>
                   </div>
-                  <div className="bg-primary/10 p-3 rounded-lg">
-                    <Bot className="h-6 w-6 text-primary" />
+                  <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-3 rounded-xl shadow-lg">
+                    <Bot className="h-6 w-6 text-white" />
                   </div>
                 </div>
               </CardContent>

@@ -63,26 +63,24 @@ export default function Sidebar() {
             
             return (
               <li key={item.href}>
-                <Link href={item.href}>
-                  <a className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors",
-                    isActive 
-                      ? "bg-primary text-white" 
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  )}>
-                    <Icon className="h-4 w-4" />
-                    <span>{item.label}</span>
-                    {item.badge && (
-                      <span className={cn(
-                        "ml-auto text-xs px-2 py-1 rounded-full",
-                        isActive 
-                          ? "bg-white text-primary" 
-                          : "bg-primary text-white"
-                      )}>
-                        {item.badge}
-                      </span>
-                    )}
-                  </a>
+                <Link href={item.href} className={cn(
+                  "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors",
+                  isActive 
+                    ? "bg-primary text-white" 
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                )}>
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                  {item.badge && (
+                    <span className={cn(
+                      "ml-auto text-xs px-2 py-1 rounded-full",
+                      isActive 
+                        ? "bg-white text-primary" 
+                        : "bg-primary text-white"
+                    )}>
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               </li>
             );
