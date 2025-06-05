@@ -1,11 +1,18 @@
 import { 
   users, agents, knowledgeBase, conversations, analytics, organizations, systemSettings,
+  departments, callTemplates, telephonyProviders, systemHealth, usageMetrics, callLogs,
   type User, type InsertUser, type Agent, type InsertAgent,
   type KnowledgeBase, type InsertKnowledgeBase,
   type Conversation, type InsertConversation,
   type Analytics, type InsertAnalytics,
   type Organization, type InsertOrganization,
-  type SystemSetting, type InsertSystemSetting
+  type SystemSetting, type InsertSystemSetting,
+  type Department, type InsertDepartment,
+  type CallTemplate, type InsertCallTemplate,
+  type TelephonyProvider, type InsertTelephonyProvider,
+  type SystemHealth, type InsertSystemHealth,
+  type UsageMetric, type InsertUsageMetric,
+  type CallLog, type InsertCallLog
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -63,6 +70,42 @@ export interface IStorage {
   getAllAnalytics(): Promise<Analytics[]>;
   createAnalytics(analytics: InsertAnalytics): Promise<Analytics>;
   updateAnalytics(id: string, updates: Partial<InsertAnalytics>): Promise<Analytics | undefined>;
+
+  // Department methods
+  getDepartmentsByOrganizationId(organizationId: string): Promise<Department[]>;
+  getDepartmentById(id: string): Promise<Department | undefined>;
+  createDepartment(department: InsertDepartment): Promise<Department>;
+  updateDepartment(id: string, updates: Partial<InsertDepartment>): Promise<Department | undefined>;
+  deleteDepartment(id: string): Promise<boolean>;
+
+  // Call Template methods
+  getCallTemplatesByOrganizationId(organizationId: string): Promise<CallTemplate[]>;
+  getCallTemplatesByDepartmentId(departmentId: string): Promise<CallTemplate[]>;
+  createCallTemplate(template: InsertCallTemplate): Promise<CallTemplate>;
+  updateCallTemplate(id: string, updates: Partial<InsertCallTemplate>): Promise<CallTemplate | undefined>;
+  deleteCallTemplate(id: string): Promise<boolean>;
+
+  // Telephony Provider methods
+  getTelephonyProvidersByOrganizationId(organizationId: string): Promise<TelephonyProvider[]>;
+  getTelephonyProviderById(id: string): Promise<TelephonyProvider | undefined>;
+  createTelephonyProvider(provider: InsertTelephonyProvider): Promise<TelephonyProvider>;
+  updateTelephonyProvider(id: string, updates: Partial<InsertTelephonyProvider>): Promise<TelephonyProvider | undefined>;
+  deleteTelephonyProvider(id: string): Promise<boolean>;
+
+  // System Health methods
+  getSystemHealthMetrics(): Promise<SystemHealth[]>;
+  createSystemHealthMetric(metric: InsertSystemHealth): Promise<SystemHealth>;
+  updateSystemHealthMetric(id: string, updates: Partial<InsertSystemHealth>): Promise<SystemHealth | undefined>;
+
+  // Usage Metrics methods
+  getUsageMetricsByOrganizationId(organizationId: string, billingPeriod?: string): Promise<UsageMetric[]>;
+  createUsageMetric(metric: InsertUsageMetric): Promise<UsageMetric>;
+
+  // Enhanced Call Logs methods
+  getCallLogsByOrganizationId(organizationId: string): Promise<CallLog[]>;
+  getCallLogsByAgentId(agentId: string): Promise<CallLog[]>;
+  createCallLog(callLog: InsertCallLog): Promise<CallLog>;
+  updateCallLog(id: string, updates: Partial<InsertCallLog>): Promise<CallLog | undefined>;
 
   sessionStore: session.SessionStore;
 }
@@ -293,6 +336,166 @@ export class DatabaseStorage implements IStorage {
       .where(eq(analytics.id, id))
       .returning();
     return updatedAnalytics || undefined;
+  }
+
+  // Department methods
+  async getDepartmentsByOrganizationId(organizationId: string): Promise<Department[]> {
+    return await db.select().from(departments).where(eq(departments.organizationId, organizationId));
+  }
+
+  async getDepartmentById(id: string): Promise<Department | undefined> {
+    const [department] = await db.select().from(departments).where(eq(departments.id, id));
+    return department || undefined;
+  }
+
+  async createDepartment(department: InsertDepartment): Promise<Department> {
+    const [newDepartment] = await db
+      .insert(departments)
+      .values(department)
+      .returning();
+    return newDepartment;
+  }
+
+  async updateDepartment(id: string, updates: Partial<InsertDepartment>): Promise<Department | undefined> {
+    const [updatedDepartment] = await db
+      .update(departments)
+      .set(updates)
+      .where(eq(departments.id, id))
+      .returning();
+    return updatedDepartment || undefined;
+  }
+
+  async deleteDepartment(id: string): Promise<boolean> {
+    const result = await db.delete(departments).where(eq(departments.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Call Template methods
+  async getCallTemplatesByOrganizationId(organizationId: string): Promise<CallTemplate[]> {
+    return await db.select().from(callTemplates).where(eq(callTemplates.organizationId, organizationId));
+  }
+
+  async getCallTemplatesByDepartmentId(departmentId: string): Promise<CallTemplate[]> {
+    return await db.select().from(callTemplates).where(eq(callTemplates.departmentId, departmentId));
+  }
+
+  async createCallTemplate(template: InsertCallTemplate): Promise<CallTemplate> {
+    const [newTemplate] = await db
+      .insert(callTemplates)
+      .values(template)
+      .returning();
+    return newTemplate;
+  }
+
+  async updateCallTemplate(id: string, updates: Partial<InsertCallTemplate>): Promise<CallTemplate | undefined> {
+    const [updatedTemplate] = await db
+      .update(callTemplates)
+      .set(updates)
+      .where(eq(callTemplates.id, id))
+      .returning();
+    return updatedTemplate || undefined;
+  }
+
+  async deleteCallTemplate(id: string): Promise<boolean> {
+    const result = await db.delete(callTemplates).where(eq(callTemplates.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Telephony Provider methods
+  async getTelephonyProvidersByOrganizationId(organizationId: string): Promise<TelephonyProvider[]> {
+    return await db.select().from(telephonyProviders).where(eq(telephonyProviders.organizationId, organizationId));
+  }
+
+  async getTelephonyProviderById(id: string): Promise<TelephonyProvider | undefined> {
+    const [provider] = await db.select().from(telephonyProviders).where(eq(telephonyProviders.id, id));
+    return provider || undefined;
+  }
+
+  async createTelephonyProvider(provider: InsertTelephonyProvider): Promise<TelephonyProvider> {
+    const [newProvider] = await db
+      .insert(telephonyProviders)
+      .values(provider)
+      .returning();
+    return newProvider;
+  }
+
+  async updateTelephonyProvider(id: string, updates: Partial<InsertTelephonyProvider>): Promise<TelephonyProvider | undefined> {
+    const [updatedProvider] = await db
+      .update(telephonyProviders)
+      .set(updates)
+      .where(eq(telephonyProviders.id, id))
+      .returning();
+    return updatedProvider || undefined;
+  }
+
+  async deleteTelephonyProvider(id: string): Promise<boolean> {
+    const result = await db.delete(telephonyProviders).where(eq(telephonyProviders.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // System Health methods
+  async getSystemHealthMetrics(): Promise<SystemHealth[]> {
+    return await db.select().from(systemHealth).orderBy(desc(systemHealth.checkedAt));
+  }
+
+  async createSystemHealthMetric(metric: InsertSystemHealth): Promise<SystemHealth> {
+    const [newMetric] = await db
+      .insert(systemHealth)
+      .values(metric)
+      .returning();
+    return newMetric;
+  }
+
+  async updateSystemHealthMetric(id: string, updates: Partial<InsertSystemHealth>): Promise<SystemHealth | undefined> {
+    const [updatedMetric] = await db
+      .update(systemHealth)
+      .set(updates)
+      .where(eq(systemHealth.id, id))
+      .returning();
+    return updatedMetric || undefined;
+  }
+
+  // Usage Metrics methods
+  async getUsageMetricsByOrganizationId(organizationId: string, billingPeriod?: string): Promise<UsageMetric[]> {
+    let query = db.select().from(usageMetrics).where(eq(usageMetrics.organizationId, organizationId));
+    if (billingPeriod) {
+      query = query.where(eq(usageMetrics.billingPeriod, billingPeriod));
+    }
+    return await query.orderBy(desc(usageMetrics.recordedAt));
+  }
+
+  async createUsageMetric(metric: InsertUsageMetric): Promise<UsageMetric> {
+    const [newMetric] = await db
+      .insert(usageMetrics)
+      .values(metric)
+      .returning();
+    return newMetric;
+  }
+
+  // Enhanced Call Logs methods
+  async getCallLogsByOrganizationId(organizationId: string): Promise<CallLog[]> {
+    return await db.select().from(callLogs).where(eq(callLogs.organizationId, organizationId)).orderBy(desc(callLogs.createdAt));
+  }
+
+  async getCallLogsByAgentId(agentId: string): Promise<CallLog[]> {
+    return await db.select().from(callLogs).where(eq(callLogs.agentId, agentId)).orderBy(desc(callLogs.createdAt));
+  }
+
+  async createCallLog(callLog: InsertCallLog): Promise<CallLog> {
+    const [newCallLog] = await db
+      .insert(callLogs)
+      .values(callLog)
+      .returning();
+    return newCallLog;
+  }
+
+  async updateCallLog(id: string, updates: Partial<InsertCallLog>): Promise<CallLog | undefined> {
+    const [updatedCallLog] = await db
+      .update(callLogs)
+      .set(updates)
+      .where(eq(callLogs.id, id))
+      .returning();
+    return updatedCallLog || undefined;
   }
 }
 

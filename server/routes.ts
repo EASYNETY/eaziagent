@@ -299,8 +299,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalOrganizations: totalOrganizations.length,
         totalUsers: totalUsers.length,
         totalAgents: totalAgents.length,
-        totalCallsThisMonth: totalAgents.reduce((sum, agent) => sum + (agent.callsThisMonth || 0), 0),
-        activeOrganizations: totalOrganizations.filter(org => org.isActive).length,
+        totalCalls: totalAgents.reduce((sum, agent) => sum + (agent.callsThisMonth || 0), 0),
+        llmCost: 0, // This would typically be calculated from actual usage metrics
+        issuesDetected: 0, // This would be calculated from system health checks
+        activeConversations: totalConversations.filter(conv => conv.status === 'active' || conv.status === 'in_progress').length,
       };
 
       res.json(stats);

@@ -16,6 +16,8 @@ import Integration from "@/pages/integration";
 import Settings from "@/pages/settings";
 import SuperAdminDashboard from "@/pages/super-admin-new";
 import LandingPage from "@/pages/landing";
+import Departments from "@/pages/departments";
+import VoiceInfrastructure from "@/pages/voice-infrastructure";
 
 function Router() {
   return (
@@ -23,6 +25,8 @@ function Router() {
       <Route path="/landing" component={LandingPage} />
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/agents" component={Agents} />
+      <ProtectedRoute path="/departments" component={Departments} />
+      <ProtectedRoute path="/voice-infrastructure" component={VoiceInfrastructure} />
       <ProtectedRoute path="/knowledge" component={KnowledgeBase} />
       <ProtectedRoute path="/conversations" component={Conversations} />
       <ProtectedRoute path="/analytics" component={Analytics} />
